@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard with GPS</title>
+    <style>
+        /* General Styles */
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 400px; margin: 100px auto; background-color: #fff; padding: 20px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); border-radius: 10px; display: none; }
+        h2 { text-align: center; margin-bottom: 20px; }
+        button, .option { display: block; width: 100%; padding: 10px; margin: 10px 0; text-align: center; color: white; text-decoration: none; border-radius: 5px; cursor: pointer; }
+        button { background-color: #28a745; border: none; }
+        button:hover { background-color: #218838; }
+        .option { background-color: #007bff; }
+        .option:hover { background-color: #0056b3; }
+        .logout { background-color: #dc3545; }
+        .logout:hover { background-color: #c82333; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        table, th, td { border: 1px solid #ddd; }
+        th, td { text-align: left; padding: 8px; }
+        th { background-color: #007bff; color: white; }
+        #stops-list { margin-top: 20px; display: none; }
+        #map { width: 100%; height: 300px; margin-top: 20px; border-radius: 10px; display: none; }
+        .message { text-align: center; margin-top: 20px; font-weight: bold; color: #555; }
+    </style>
+</head>
+<body>
+    <!-- Login Form -->
+    <div class="container" id="login-container">
+        <h2>Login</h2>
+        <form id="loginForm">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required>
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+            <div class="error" id="error-message" style="color:red;"></div>
+            <button type="submit">Login</button>
+        </form>
+    </div>
+
+    <!-- Student Dashboard -->
+    <div class="container" id="dashboard-container">
+        <h2>Student Dashboard</h2>
+        <a href="#" class="option" id="viewProfile">My Profile</a>
+        <a href="#" class="option" id="viewLocation">Live Location</a>
+        <a href="#" class="option" id="bookBusPass">Book Bus Pass</a>
+        <a href="#" class="option" id="viewBookedPasses">View Booked Bus Passes</a>
+        <a href="#" class="option logout" id="logout">Logout</a>
+        <!-- Map for GPS Location -->
+        <div id="map"></div>
+        <p id="gps-coordinates" class="message"></p>
+    </div>
+
+    <!-- Book Bus Pass -->
+    <div class="container" id="book-bus-pass-container">
+        <h2>Book Bus Pass</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Route</th>
+                    <th>Departure Time</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Route A</td>
+                    <td>08:00 AM</td>
+                    <td><button class="option" onclick="showStops('Route A')">Select Route</button></td>
+                </tr>
+                <tr>
+                    <td>Route B</td>
+                    <td>09:00 AM</td>
+                    <td><button class="option" onclick="showStops('Route B')">Select Route</button></td>
+                </tr>
+            </tbody>
+        </table>
+        <div id="stops-list"></div>
+        <a href="#" class="option" id="backToDashboardFromBusPass">Back to Dashboard</a>
+    </div>
+
+    <script>
+        const loginContainer = document.getElementById('login-container');
+        const dashboardContainer = document.getElementById('dashboard-container');
+        const bookBusPassContainer = document.getElementById('book-bus-pass-container');
+        const stopsList = document.getElementById('stops-list');
+
+        // Route stops data
+        const routeStops = {
+            'Route A': ['Stop 1', 'Stop 2', 'Stop 3'],
+            'Route B': ['Stop A', 'Stop B', 'Stop C']
+        };
+
+        // On load, check login status
+        if (localStorage.getItem('isLoggedIn') === 'student') {
+            dashboardContainer.style.display = 'block';
+        } else {
+            loginContainer.style.display = 'block';
+        }
+
+        // Login Functionality
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            if (username === 'student' && password === 'student123') {
+                localStorage.setItem('isLoggedIn', 'student');
+                loginContainer.style.display = 'none';
+                dashboardContainer.style.display = 'block';
+            } else {
+                document.getElementById('error-message').textContent = 'Invalid username or password';
+            }
+        });
+
+        // Logout Functionality
+        document.getElementById('logout').addEventListener('click', function() {
+            localStorage.removeItem('isLoggedIn');
+            dashboardContainer.style.display = 'none';
+            loginContainer.style.display = 'block';
+        });
+
+        // Show stops for the selected route
+        function showStops(route) {
+            stopsList.style.display = 'block';
+            stopsList.innerHTML = `
+                <h3>Stops for ${route}:</h3>
+                <ul>
+                    ${routeStops[route].map(stop => <li>${stop}</li>).join('')}
+                </ul>
+            `;
+        }
+
+        // Navigate back to Dashboard
+        document.getElementById('backToDashboardFromBusPass').addEventListener('click', function() {
+            bookBusPassContainer.style.display = 'none';
+            dashboardContainer.style.display = 'block';
+            stopsList.style.display = 'none'; // Reset stops list
+        });
+
+        // Book Bus Pass
+        document.getElementById('bookBusPass').addEventListener('click', function() {
+            dashboardContainer.style.display = 'none';
+            bookBusPassContainer.style.display = 'block';
+        });
+
+        // Google Maps GPS Integration
+        let map, marker;
+
+        function initMap() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const userLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+
+                    map = new google.maps.Map(document.getElementById('map'), {
+                        center: userLocation,
+                        zoom: 15
+                    });
+
+                    marker = new google.maps.Marker({
+                        position: userLocation,
+                        map: map,
+                        title: "You are here"
+                    });
+
+                    document.getElementById('gps-coordinates').textContent = 
+                        Latitude: ${position.coords.latitude}, Longitude: ${position.coords.longitude};
+                }, function() {
+                    alert("Geolocation service failed.");
+                });
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        // Load Google Maps API
+        window.onload = function() {
+            initMap();
+        };
+    </script>
+
+    <!-- Google Maps API Script -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
+</body>
+</html>
+Added index.html file
