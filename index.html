@@ -3,249 +3,719 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Dashboard with GPS</title>
+    <title>Multi-Login System</title>
     <style>
-        /* General Styles */
-        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
-        .container { max-width: 400px; margin: 100px auto; background-color: #fff; padding: 20px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); border-radius: 10px; display: none; }
-        h2 { text-align: center; margin-bottom: 20px; }
-        button, .option { display: block; width: 100%; padding: 10px; margin: 10px 0; text-align: center; color: white; text-decoration: none; border-radius: 5px; cursor: pointer; }
-        button { background-color: #28a745; border: none; }
-        button:hover { background-color: #218838; }
-        .option { background-color: #007bff; }
-        .option:hover { background-color: #0056b3; }
-        .logout { background-color: #dc3545; }
-        .logout:hover { background-color: #c82333; }
-        .message { text-align: center; margin-top: 20px; font-weight: bold; color: #555; }
-        .input-field { width: 100%; padding: 10px; margin: 5px 0; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .menu-item {
+            background: #007bff;
+            color: white;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .menu-item:hover {
+            background: #0056b3;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .table th, .table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .table th {
+            background-color: #f5f5f5;
+        }
+        .button {
+            background: #28a745;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .back-button {
+            background: #6c757d;
+        }
+        .error {
+            color: red;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .logout {
+            background: #dc3545;
+        }
+        .profile-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .profile-field {
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 4px solid #007bff;
+            background: white;
+        }
+        .booking-form {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .route-details {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
     <!-- Login Form -->
-    <div class="container" id="login-container">
+    <div id="loginSection" class="container">
         <h2>Login</h2>
         <form id="loginForm">
-            <label for="username">Username</label>
-            <input type="text" id="username" name="username" required>
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" required>
-            <div class="error" id="error-message" style="color:red;"></div>
-            <button type="submit">Login</button>
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="username" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="password" required>
+            </div>
+            <div id="loginError" class="error"></div>
+            <button type="submit" class="button">Login</button>
         </form>
     </div>
 
     <!-- Student Dashboard -->
-    <div class="container" id="dashboard-container">
+    <div id="studentDashboard" class="container" style="display: none;">
         <h2>Student Dashboard</h2>
-        <a href="#" class="option" id="viewProfile">My Profile</a>
-        <a href="#" class="option" id="viewLocation">Live Location</a>
-        <a href="#" class="option" id="bookBusPass">Book Bus Pass</a>
-        <a href="#" class="option" id="viewBookedPasses">View Booked Bus Passes</a>
-        <a href="#" class="option logout" id="logout">Logout</a>
+        <div class="menu-item" onclick="showStudentProfile()">My Profile</div>
+        <div class="menu-item" onclick="showBusRoutes()">Book Bus Pass</div>
+        <div class="menu-item" onclick="showBookedPass()">View Booked Pass</div>
+        <div class="menu-item" onclick="trackBus()">Track bus</div>
+
+        <div class="menu-item logout" onclick="logout()">Logout</div>
+    </div>
+    <script>
+        
+        function trackBus() {
+            // Check if geolocation is supported by the browser
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    // Success callback
+                    function(position) {
+                        const userLat = position.coords.latitude;
+                        const userLng = position.coords.longitude;
+                        
+                        // Create Google Maps URL with user's location
+                        const mapsUrl = `https://www.google.com/maps?q=${userLat},${userLng}`;
+                        
+                        // Open Google Maps in a new tab
+                        window.open(mapsUrl, '_blank');
+                    },
+                    // Error callback
+                    function(error) {
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                alert("Please allow location access to track your position.");
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                alert("Location information unavailable.");
+                                break;
+                            case error.TIMEOUT:
+                                alert("Location request timed out.");
+                                break;
+                            default:
+                                alert("An unknown error occurred.");
+                                break;
+                        }
+                    }
+                );
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+        
+        // This function is kept for compatibility with original code
+        function showBookedPass() {
+            trackBus();
+        }
+    </script>
+    <!-- Student Profile -->
+    <div id="studentProfile" class="container" style="display: none;">
+        <h2>Student Profile</h2>
+        <div class="profile-card">
+            <div class="profile-field">
+                <strong>Name:</strong> John Mathew
+            </div>
+            <div class="profile-field">
+                <strong>ID:</strong> ST001
+            </div>
+            <div class="profile-field">
+                <strong>Course:</strong> B.Tech Computer Science
+            </div>
+            <div class="profile-field">
+                <strong>Year:</strong> Third Year
+            </div>
+            <div class="profile-field">
+                <strong>Blood-Group:</strong> o+ve
+            </div>
+            </div>
+            <div class="profile-field">
+                <strong>Contact:</strong> +91 9876543210
+            </div>
+        </div>
+        <button class="button back-button" onclick="backToStudentDashboard()">Back to Dashboard</button>
     </div>
 
-    <!-- My Profile -->
-    <div class="container" id="my-profile-container">
-        <h2>My Profile</h2>
-        <label for="name">Name</label>
-        <input type="text" id="name" class="input-field">
-        <label for="blood-group">Blood Group</label>
-        <input type="text" id="blood-group" class="input-field">
-        <label for="admission-number">Admission Number</label>
-        <input type="text" id="admission-number" class="input-field">
-        <label for="pickup-location">Pickup Location</label>
-        <input type="text" id="pickup-location" class="input-field">
-        <label for="drop-location">Drop Location</label>
-        <input type="text" id="drop-location" class="input-field">
-        <button class="option" id="saveProfile">Save Profile</button>
-        <a href="#" class="option" id="backToDashboardFromProfile">Back to Dashboard</a>
-    </div>
-
-    <!-- Book Bus Pass -->
-    <div class="container" id="book-bus-pass-container">
-        <h2>Book Bus Pass</h2>
-        <table>
+    <!-- Bus Routes Section -->
+    <div id="busRoutes" class="container" style="display: none;">
+        <h2>Available Bus Routes</h2>
+        <table class="table">
             <thead>
                 <tr>
                     <th>Route</th>
                     <th>Departure Time</th>
+                    <th>Stops</th>
                     <th>Action</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <td>Route A</td>
-                    <td>08:00 AM</td>
-                    <td><button class="option" onclick="showStops('Route A')">Select Route</button></td>
+                    <td>8:00 AM</td>
+                    <td>Pala, Kuravilangad, Ettumanoor</td>
+                    <td><button class="button" onclick="showBookingForm('Route A', '8:00 AM', 'Pala, Kuravilangad, Ettumanoor')">Select</button></td>
                 </tr>
                 <tr>
                     <td>Route B</td>
-                    <td>09:00 AM</td>
-                    <td><button class="option" onclick="showStops('Route B')">Select Route</button></td>
+                    <td>9:00 AM</td>
+                    <td>Kottayam, Kumarakom, Changanassery</td>
+                    <td><button class="button" onclick="showBookingForm('Route B', '9:00 AM', 'Kottayam, Kumarakom, Changanassery')">Select</button></td>
+                </tr>
+                <tr>
+                    <td>Route C</td>
+                    <td>7:30 AM</td>
+                    <td>Thodupuzha, Muttom, Kaduthuruthy</td>
+                    <td><button class="button" onclick="showBookingForm('Route C', '7:30 AM', 'Thodupuzha, Muttom, Kaduthuruthy')">Select</button></td>
                 </tr>
             </tbody>
         </table>
-        <div id="stops-list"></div>
-        <a href="#" class="option" id="backToDashboardFromBusPass">Back to Dashboard</a>
+
+        <div id="bookingForm" class="booking-form">
+            <h3>Book Bus Pass</h3>
+            <div class="route-details">
+                <p><strong>Selected Route:</strong> <span id="selectedRoute"></span></p>
+                <p><strong>Departure Time:</strong> <span id="selectedTime"></span></p>
+                <p><strong>Stops:</strong> <span id="selectedStops"></span></p>
+            </div>
+            <div class="form-group">
+                <label>Pass Duration</label>
+                <select id="durationSelect">
+                    <option value="1">1 Month - ₹1000</option>
+                    <option value="3">3 Months - ₹2700</option>
+                    <option value="6">6 Months - ₹5000</option>
+                </select>
+            </div>
+            <button class="button" onclick="confirmBooking()">Confirm Booking</button>
+        </div>
+
+        <button class="button back-button" onclick="backToStudentDashboard()">Back to Dashboard</button>
     </div>
 
-    <!-- GPS Map View -->
-    <div class="container" id="map-container">
-        <h2>Live Location</h2>
-        <div id="map"></div>
-        <p id="gps-coordinates" class="message"></p>
-        <a href="#" class="option" id="backToDashboardFromMap">Back to Dashboard</a>
+    <!-- Booked Pass View -->
+    <div id="bookedPass" class="container" style="display: none;">
+        <h2>Your Bus Pass</h2>
+        <div class="profile-card">
+            <div class="profile-field">
+                <strong>Pass ID:</strong> BP001
+            </div>
+            <div class="profile-field">
+                <strong>Route:</strong> <span id="passRoute"></span>
+            </div>
+            <div class="profile-field">
+                <strong>Departure Time:</strong> <span id="passDeparture"></span>
+            </div>
+            <div class="profile-field">
+                <strong>Valid Till:</strong> <span id="passValidity"></span>
+            </div>
+            <div class="profile-field">
+                <strong>Status:</strong> Active
+            </div>
+        </div>
+        <button class="button back-button" onclick="backToStudentDashboard()">Back to Dashboard</button>
+    </div>
+
+    <!-- Operator Dashboard -->
+    <div id="operatorDashboard" class="container" style="display: none;">
+        <h2>Operator Dashboard</h2>
+        <div class="menu-item" onclick="showOperatorProfile()">Operator Profile</div>
+        <div class="menu-item" onclick="showStudentList()">List of Students</div>
+        <div class="menu-item" onclick="showBusPassManagement()">Bus Pass Management</div>
+        <div class="menu-item" onclick="trackBus()">Track bus</div>
+        <div class="menu-item logout" onclick="logout()">Logout</div>
+    </div>
+    <script>
+        
+        function trackBus() {
+            // Check if geolocation is supported by the browser
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    // Success callback
+                    function(position) {
+                        const userLat = position.coords.latitude;
+                        const userLng = position.coords.longitude;
+                        
+                        // Create Google Maps URL with user's location
+                        const mapsUrl = `https://www.google.com/maps?q=${userLat},${userLng}`;
+                        
+                        // Open Google Maps in a new tab
+                        window.open(mapsUrl, '_blank');
+                    },
+                    // Error callback
+                    function(error) {
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                alert("Please allow location access to track your position.");
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                alert("Location information unavailable.");
+                                break;
+                            case error.TIMEOUT:
+                                alert("Location request timed out.");
+                                break;
+                            default:
+                                alert("An unknown error occurred.");
+                                break;
+                        }
+                    }
+                );
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+        
+        // This function is kept for compatibility with original code
+        function showBookedPass() {
+            trackBus();
+        }
+    </script>
+    <!-- Operator Profile -->
+    <div id="operatorProfile" class="container" style="display: none;">
+        <h2>Operator Profile</h2>
+        <div class="profile-card">
+            <div class="profile-field">
+                <strong>Name:</strong> John Operator
+            </div>
+            <div class="profile-field">
+                <strong>ID:</strong> OP123
+            </div>
+            <div class="profile-field">
+                <strong>Route:</strong> Route A
+            </div>
+            <div class="profile-field">
+                <strong>Contact:</strong> +91 9876543210
+            </div>
+        </div>
+        <button class="button back-button" onclick="backToOperatorDashboard()">Back to Dashboard</button>
+    </div>
+
+    <!-- Student List -->
+    <div id="studentList" class="container" style="display: none;">
+        <h2>Student List</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>ID</th>
+                    <th>Route</th>
+                    <th>Pass Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>John Student</td>
+                    <td>ST001</td>
+                    <td>Route A</td>
+                    <td>Active</td>
+                </tr>
+                <tr>
+                    <td>Jane Student</td>
+                    <td>ST002</td>
+                    <td>Route B</td>
+                    <td>Pending</td>
+                </tr>
+            </tbody>
+        </table>
+        <button class="button back-button" onclick="backToOperatorDashboard()">Back to Dashboard</button>
+    </div>
+
+    <!-- Bus Pass Management -->
+    <div id="busPassManagement" class="container" style="display: none;">
+        <h2>Bus Pass Management</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Pass ID</th>
+                    <th>Student Name</th>
+                    <th>Route</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>BP001</td>
+                    <td>John Student</td>
+                    <td>Route A</td>
+                    <td>Active</td>
+                    <td><button class="button" onclick="updatePass('BP001')">Update</button></td>
+                </tr>
+                <tr>
+                    <td>BP002</td>
+                    <td>Jane Student</td>
+                    <td>Route B</td>
+                    <td>Pending</td>
+                    <td><button class="button" onclick="updatePass('BP002')">Update</button></td>
+                </tr>
+            </tbody>
+        </table>
+        <button class="button back-button" onclick="backToOperatorDashboard()">Back to Dashboard</button>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="adminDashboard" class="container" style="display: none;">
+        <h2>Admin Dashboard</h2>
+        <div class="menu-item" onclick="showAdminProfile()">Admin Profile</div>
+        <div class="menu-item" onclick="showManageOperators()">Manage Operators</div>
+        <div class="menu-item" onclick="showManageStudents()">Manage Students</div>
+        <div class="menu-item" onclick="showManageRoutes()">Manage Routes</div>
+        
+        <div class="menu-item" onclick="trackBus()">Track bus</div>
+        <div class="menu-item logout" onclick="logout()">Logout</div>
+    </div>
+    <script>
+        
+        function trackBus() {
+            // Check if geolocation is supported by the browser
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    // Success callback
+                    function(position) {
+                        const userLat = position.coords.latitude;
+                        const userLng = position.coords.longitude;
+                        
+                        // Create Google Maps URL with user's location
+                        const mapsUrl = `https://www.google.com/maps?q=${userLat},${userLng}`;
+                        
+                        // Open Google Maps in a new tab
+                        window.open(mapsUrl, '_blank');
+                    },
+                    // Error callback
+                    function(error) {
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                alert("Please allow location access to track your position.");
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                alert("Location information unavailable.");
+                                break;
+                            case error.TIMEOUT:
+                                alert("Location request timed out.");
+                                break;
+                            default:
+                                alert("An unknown error occurred.");
+                                break;
+                        }
+                    }
+                );
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+        
+        // This function is kept for compatibility with original code
+        function showBookedPass() {
+            trackBus();
+        }
+    </script>
+    <!-- Admin Profile -->
+    <div id="adminProfile" class="container" style="display: none;">
+        <h2>Admin Profile</h2>
+        <div class="profile-card">
+            <div class="profile-field">
+                <strong>Name:</strong> Admin User
+            </div>
+            <div class="profile-field">
+                <strong>ID:</strong> AD001
+            </div>
+            <div class="profile-field">
+                <strong>Role:</strong> System Administrator
+            </div>
+            <div class="profile-field">
+                <strong>Contact:</strong> +91 9876543210
+            </div>
+        </div>
+        <button class="button back-button" onclick="backToAdminDashboard()">Back to Dashboard</button>
+    </div>
+
+    <!-- Manage Operators -->
+    <div id="manageOperators" class="container" style="display: none;">
+        <h2>Manage Operators</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>ID</th>
+                    <th>Route</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>John Operator</td>
+                    <td>OP001</td>
+                    <td>Route A</td>
+                    <td>Active</td>
+                    <td><button class="button" onclick="editOperator('OP001')">Edit</button></td>
+                </tr>
+                <tr>
+                    <td>Jane Operator</td>
+                    <td>OP002</td>
+                    <td>Route B</td>
+                    <td>Active</td>
+                    <td><button class="button" onclick="editOperator('OP002')">Edit</button></td>
+                </tr>
+            </tbody>
+        </table>
+        <button class="button back-button" onclick="backToAdminDashboard()">Back to Dashboard</button>
+    </div>
+    <!-- Manage Students -->
+    <div id="manageStudents" class="container" style="display: none;">
+        <h2>Manage Students</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>ID</th>
+                    <th>Course</th>
+                    <th>Pass Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>John Student</td>
+                    <td>ST001</td>
+                    <td>B.Tech Computer Science</td>
+                    <td>Active</td>
+                    <td><button class="button" onclick="editStudent('ST001')">Edit</button></td>
+                </tr>
+                <tr>
+                    <td>Jane Student</td>
+                    <td>ST002</td>
+                    <td>B.Tech Electronics</td>
+                    <td>Pending</td>
+                    <td><button class="button" onclick="editStudent('ST002')">Edit</button></td>
+                </tr>
+            </tbody>
+        </table>
+        <button class="button back-button" onclick="backToAdminDashboard()">Back to Dashboard</button>
+    </div>
+
+    <!-- Manage Routes -->
+    <div id="manageRoutes" class="container" style="display: none;">
+        <h2>Manage Routes</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Route ID</th>
+                    <th>Name</th>
+                    <th>Stops</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>R001</td>
+                    <td>Route A</td>
+                    <td>Pala, Kuravilangad, Ettumanoor</td>
+                    <td>Active</td>
+                    <td><button class="button" onclick="editRoute('R001')">Edit</button></td>
+                </tr>
+                <tr>
+                    <td>R002</td>
+                    <td>Route B</td>
+                    <td>Kottayam, Kumarakom, Changanassery</td>
+                    <td>Active</td>
+                    <td><button class="button" onclick="editRoute('R002')">Edit</button></td>
+                </tr>
+            </tbody>
+        </table>
+        <button class="button back-button" onclick="backToAdminDashboard()">Back to Dashboard</button>
     </div>
 
     <script>
-        const loginContainer = document.getElementById('login-container');
-        const dashboardContainer = document.getElementById('dashboard-container');
-        const myProfileContainer = document.getElementById('my-profile-container');
-        const bookBusPassContainer = document.getElementById('book-bus-pass-container');
-        const mapContainer = document.getElementById('map-container');
-        const stopsList = document.getElementById('stops-list');
-
-        // Route stops data
-        const routeStops = {
-            'Route A': ['Stop 1', 'Stop 2', 'Stop 3'],
-            'Route B': ['Stop A', 'Stop B', 'Stop C']
-        };
-
-        // On load, check login status
-        if (localStorage.getItem('isLoggedIn') === 'student') {
-            dashboardContainer.style.display = 'block';
-        } else {
-            loginContainer.style.display = 'block';
-        }
-
-        // Login Functionality
-        document.getElementById('loginForm').addEventListener('submit', function(event) {
-            event.preventDefault();
+        // Login functionality
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
+            
+            // Simple login logic (for demonstration)
             if (username === 'student' && password === 'student123') {
-                localStorage.setItem('isLoggedIn', 'student');
-                loginContainer.style.display = 'none';
-                dashboardContainer.style.display = 'block';
+                showSection('studentDashboard');
+            } else if (username === 'operator' && password === 'operator123') {
+                showSection('operatorDashboard');
+            } else if (username === 'admin' && password === 'admin123') {
+                showSection('adminDashboard');
             } else {
-                document.getElementById('error-message').textContent = 'Invalid username or password';
+                document.getElementById('loginError').textContent = 'Invalid credentials';
             }
         });
 
-        // Logout Functionality
-        document.getElementById('logout').addEventListener('click', function() {
-            localStorage.removeItem('isLoggedIn');
-            dashboardContainer.style.display = 'none';
-            loginContainer.style.display = 'block';
-        });
-
-        // Show stops for the selected route
-        function showStops(route) {
-            stopsList.style.display = 'block';
-            stopsList.innerHTML = `
-                <h3>Stops for ${route}:</h3>
-                <ul>
-                    ${routeStops[route].map(stop => `<li>${stop}</li>`).join('')}
-                </ul>
-            `;
+        // Utility functions
+        function showSection(sectionId) {
+            // Hide all containers
+            document.querySelectorAll('.container').forEach(container => {
+                container.style.display = 'none';
+            });
+            // Show requested section
+            document.getElementById(sectionId).style.display = 'block';
         }
 
-        // Navigate back to Dashboard from Bus Pass view
-        document.getElementById('backToDashboardFromBusPass').addEventListener('click', function() {
-            bookBusPassContainer.style.display = 'none';
-            dashboardContainer.style.display = 'block';
-            stopsList.style.display = 'none'; // Reset stops list
-        });
-
-        // Book Bus Pass
-        document.getElementById('bookBusPass').addEventListener('click', function() {
-            dashboardContainer.style.display = 'none';
-            bookBusPassContainer.style.display = 'block';
-        });
-
-        // GPS Map Integration
-        function initMap() {
-            const gpsCoordinates = document.getElementById('gps-coordinates');
-            gpsCoordinates.textContent = 'Fetching location...';
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    const userLocation = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude
-                    };
-
-                    const map = new google.maps.Map(document.getElementById('map'), {
-                        center: userLocation,
-                        zoom: 15
-                    });
-
-                    new google.maps.Marker({
-                        position: userLocation,
-                        map: map,
-                        title: "You are here"
-                    });
-
-                    gpsCoordinates.textContent = 
-                        `Latitude: ${position.coords.latitude}, Longitude: ${position.coords.longitude}`;
-                }, function() {
-                    gpsCoordinates.textContent = 'Unable to fetch location.';
-                });
-            } else {
-                gpsCoordinates.textContent = 'Geolocation is not supported by your browser.';
-            }
+        // Student functions
+        function showStudentProfile() {
+            showSection('studentProfile');
         }
 
-        // Show map view
-        document.getElementById('viewLocation').addEventListener('click', function() {
-            dashboardContainer.style.display = 'none';
-            mapContainer.style.display = 'block';
-            initMap();
-        });
+        function showBusRoutes() {
+            showSection('busRoutes');
+        }
 
-        // Back to Dashboard from Map
-        document.getElementById('backToDashboardFromMap').addEventListener('click', function() {
-            mapContainer.style.display = 'none';
-            dashboardContainer.style.display = 'block';
-            document.getElementById('gps-coordinates').textContent = ''; // Clear GPS message
-        });
+        function showBookedPass() {
+            // Set some demo data
+            document.getElementById('passRoute').textContent = 'Route A';
+            document.getElementById('passDeparture').textContent = '8:00 AM';
+            document.getElementById('passValidity').textContent = '31 Dec 2025';
+            showSection('bookedPass');
+        }
 
-        // View and edit profile
-        document.getElementById('viewProfile').addEventListener('click', function() {
-            dashboardContainer.style.display = 'none';
-            myProfileContainer.style.display = 'block';
+        function showBookingForm(route, time, stops) {
+            document.getElementById('selectedRoute').textContent = route;
+            document.getElementById('selectedTime').textContent = time;
+            document.getElementById('selectedStops').textContent = stops;
+            document.getElementById('bookingForm').style.display = 'block';
+        }
 
-            // Load saved profile data from localStorage
-            const profileData = JSON.parse(localStorage.getItem('profileData'));
-            if (profileData) {
-                document.getElementById('name').value = profileData.name;
-                document.getElementById('blood-group').value = profileData.bloodGroup;
-                document.getElementById('admission-number').value = profileData.admissionNumber;
-                document.getElementById('pickup-location').value = profileData.pickupLocation;
-                document.getElementById('drop-location').value = profileData.dropLocation;
-            }
-        });
+        function confirmBooking() {
+            alert('Booking confirmed successfully!');
+            showBookedPass();
+        }
 
-        // Save profile data
-        document.getElementById('saveProfile').addEventListener('click', function() {
-            const profileData = {
-                name: document.getElementById('name').value,
-                bloodGroup: document.getElementById('blood-group').value,
-                admissionNumber: document.getElementById('admission-number').value,
-                pickupLocation: document.getElementById('pickup-location').value,
-                dropLocation: document.getElementById('drop-location').value
-            };
-            localStorage.setItem('profileData', JSON.stringify(profileData));
-            alert('Profile saved successfully!');
-        });
+        function backToStudentDashboard() {
+            showSection('studentDashboard');
+        }
 
-        // Back to Dashboard from Profile
-        document.getElementById('backToDashboardFromProfile').addEventListener('click', function() {
-            myProfileContainer.style.display = 'none';
-            dashboardContainer.style.display = 'block';
-        });
+        // Operator functions
+        function showOperatorProfile() {
+            showSection('operatorProfile');
+        }
+
+        function showStudentList() {
+            showSection('studentList');
+        }
+
+        function showBusPassManagement() {
+            showSection('busPassManagement');
+        }
+
+        function backToOperatorDashboard() {
+            showSection('operatorDashboard');
+        }
+
+        function updatePass(passId) {
+            alert('Pass ' + passId + ' updated successfully!');
+        }
+
+        // Admin functions
+        function showAdminProfile() {
+            showSection('adminProfile');
+        }
+
+        function showManageOperators() {
+            showSection('manageOperators');
+        }
+
+        function showManageStudents() {
+            showSection('manageStudents');
+        }
+
+        function showManageRoutes() {
+            showSection('manageRoutes');
+        }
+
+        function backToAdminDashboard() {
+            showSection('adminDashboard');
+        }
+
+        function editOperator(operatorId) {
+            alert('Editing operator: ' + operatorId);
+        }
+
+        function editStudent(studentId) {
+            alert('Editing student: ' + studentId);
+        }
+
+        function editRoute(routeId) {
+            alert('Editing route: ' + routeId);
+        }
+
+        function logout() {
+            showSection('loginSection');
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('loginError').textContent = '';
+        }
     </script>
-
-    <!-- Google Maps API Script -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
 </body>
 </html>
